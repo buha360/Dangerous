@@ -2,7 +2,9 @@ package com.example.examplemod;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -23,11 +25,12 @@ import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
+import java.util.Timer;
+import java.util.TimerTask;
 
 @Mod(Dangerous.MODID)
 public class Dangerous {
@@ -52,6 +55,7 @@ public class Dangerous {
 
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(new SkeletonWeaponManager());
+        MinecraftForge.EVENT_BUS.register(new MobDeathHandler());
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
@@ -73,6 +77,44 @@ public class Dangerous {
         maxHealthMultiplier = DangerousConfig.COMMON.maxHealthMultiplier.get();
         healthMultiplierIncrement = DangerousConfig.COMMON.healthMultiplierIncrement.get();
         daysPerIncrement = DangerousConfig.COMMON.daysPerIncrement.get();
+    }
+
+    @SubscribeEvent
+    public void onPlayerJoin(EntityJoinLevelEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player && event.getLevel() instanceof ServerLevel serverWorld) {
+            MinecraftServer server = serverWorld.getServer();
+
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    sendWorldInfoToPlayer(player, serverWorld);
+                }
+            }, 2500);
+        }
+    }
+
+    private void sendWorldInfoToPlayer(ServerPlayer player, ServerLevel world) {
+        long currentDay = world.getDayTime() / 24000L;
+        double healthMultiplier = DangerousConfig.COMMON.baseHealthMultiplier.get().floatValue();
+        int daysPerIncrement = DangerousConfig.COMMON.daysPerIncrement.get();
+
+        long daysUntilNextIncrement = daysPerIncrement - (currentDay % daysPerIncrement);
+
+        Component dangerousMessage = Component.literal("            === Dangerous Mod Stats ===")
+                .withStyle(style -> style.withBold(true).withColor(0xFF5555));
+
+        Component emptyLine = Component.literal(" ");
+
+        Component combinedMessage = Component.literal("Day: ")
+                .append(Component.literal("" + currentDay).withStyle(style -> style.withColor(0x00FF00)))
+                .append(Component.literal(" | Mob HP Multiplier: "))
+                .append(Component.literal("" + healthMultiplier).withStyle(style -> style.withColor(0xFFFF55)))
+                .append(Component.literal(" | Days Until Next Increment: "))
+                .append(Component.literal("" + daysUntilNextIncrement).withStyle(style -> style.withColor(0x55FFFF)));
+
+        player.sendSystemMessage(dangerousMessage);
+        player.sendSystemMessage(emptyLine);
+        player.sendSystemMessage(combinedMessage);
     }
 
     @SubscribeEvent

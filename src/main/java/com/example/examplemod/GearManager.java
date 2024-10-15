@@ -23,6 +23,7 @@ public class GearManager {
 
     private static final Random RANDOM = new Random();
     private static final String EQUIPMENT_MODIFIED_TAG = "dangerous_equipment_modified";
+    private static final int SURFACE_Y_THRESHOLD = 64; // Ezen a magasságon felül számítjuk a felszínt
 
     public static void equipMobBasedOnDifficulty(Mob mob, ServerLevel world) {
         Difficulty difficulty = world.getDifficulty();
@@ -32,13 +33,21 @@ public class GearManager {
             return;
         }
 
-        giveArmorForAllSlots(mob, difficulty);
+        // Mob spawnolási magasságának ellenőrzése
+        if (mob.getY() > SURFACE_Y_THRESHOLD) {
+            // Felszíni mob
+            giveSurfaceLevelGear(mob, difficulty);
+        } else {
+            // Mélyen lévő mob
+            giveDeepLevelGear(mob, difficulty);
+        }
 
+        // Speciális logika zombik, skeletonok és creeper-ek számára
         if (mob instanceof Zombie) {
             giveZombieWeapon(mob);
         } else if (mob instanceof Skeleton) {
             giveSkeletonWeapon(mob);
-        } else if(mob instanceof Creeper) {
+        } else if (mob instanceof Creeper) {
             increaseCreeperSpeed((Creeper) mob);
         }
 
@@ -53,11 +62,22 @@ public class GearManager {
         }
     }
 
-    private static void giveArmorForAllSlots(Mob mob, Difficulty difficulty) {
-        equipArmorIfChance(mob, EquipmentSlot.HEAD, "helmet", getGearChanceForDifficulty(difficulty));
-        equipArmorIfChance(mob, EquipmentSlot.CHEST, "chestplate", getGearChanceForDifficulty(difficulty));
-        equipArmorIfChance(mob, EquipmentSlot.LEGS, "leggings", getGearChanceForDifficulty(difficulty));
-        equipArmorIfChance(mob, EquipmentSlot.FEET, "boots", getGearChanceForDifficulty(difficulty));
+    // Felszíni mobok felszerelése
+    private static void giveSurfaceLevelGear(Mob mob, Difficulty difficulty) {
+        equipArmorIfChance(mob, EquipmentSlot.HEAD, "helmet", getGearChanceForDifficulty(difficulty), DangerousConfig.COMMON.surfaceArmor.get());
+        equipArmorIfChance(mob, EquipmentSlot.CHEST, "chestplate", getGearChanceForDifficulty(difficulty), DangerousConfig.COMMON.surfaceArmor.get());
+        equipArmorIfChance(mob, EquipmentSlot.LEGS, "leggings", getGearChanceForDifficulty(difficulty), DangerousConfig.COMMON.surfaceArmor.get());
+        equipArmorIfChance(mob, EquipmentSlot.FEET, "boots", getGearChanceForDifficulty(difficulty), DangerousConfig.COMMON.surfaceArmor.get());
+        giveWeapon(mob, DangerousConfig.COMMON.surfaceWeapons.get());
+    }
+
+    // Mélyen lévő mobok felszerelése
+    private static void giveDeepLevelGear(Mob mob, Difficulty difficulty) {
+        equipArmorIfChance(mob, EquipmentSlot.HEAD, "helmet", getGearChanceForDifficulty(difficulty), DangerousConfig.COMMON.deepArmor.get());
+        equipArmorIfChance(mob, EquipmentSlot.CHEST, "chestplate", getGearChanceForDifficulty(difficulty), DangerousConfig.COMMON.deepArmor.get());
+        equipArmorIfChance(mob, EquipmentSlot.LEGS, "leggings", getGearChanceForDifficulty(difficulty), DangerousConfig.COMMON.deepArmor.get());
+        equipArmorIfChance(mob, EquipmentSlot.FEET, "boots", getGearChanceForDifficulty(difficulty), DangerousConfig.COMMON.deepArmor.get());
+        giveWeapon(mob, DangerousConfig.COMMON.deepWeapons.get());
     }
 
     private static double getGearChanceForDifficulty(Difficulty difficulty) {
@@ -69,9 +89,7 @@ public class GearManager {
         };
     }
 
-    private static void equipArmorIfChance(Mob mob, EquipmentSlot slot, String armorType, double chance) {
-        List<String> availableArmor = DangerousConfig.COMMON.availableArmor.get();
-
+    private static void equipArmorIfChance(Mob mob, EquipmentSlot slot, String armorType, double chance, List<String> availableArmor) {
         List<String> filteredArmor = availableArmor.stream()
                 .filter(armor -> armor.contains(armorType))
                 .toList();
@@ -81,7 +99,18 @@ public class GearManager {
             ItemStack armor = new ItemStack(ForgeRegistries.ITEMS.getValue(new ResourceLocation(selectedArmor)));
 
             maybeEnchantItem(armor, DangerousConfig.COMMON.availableArmorEnchantments.get());
+            giveNBT(armor);
             mob.setItemSlot(slot, armor);
+        }
+    }
+
+    private static void giveWeapon(Mob mob, List<String> availableWeapons) {
+        if (!availableWeapons.isEmpty()) {
+            String selectedWeapon = availableWeapons.get(RANDOM.nextInt(availableWeapons.size()));
+            ItemStack weapon = new ItemStack(ForgeRegistries.ITEMS.getValue(new ResourceLocation(selectedWeapon)));
+            maybeEnchantItem(weapon, DangerousConfig.COMMON.availableWeaponEnchantments.get());
+            giveNBT(weapon);
+            mob.setItemInHand(mob.getUsedItemHand(), weapon);
         }
     }
 
@@ -96,7 +125,7 @@ public class GearManager {
     }
 
     private static ItemStack getRandomMeleeWeapon() {
-        List<String> availableWeapons = DangerousConfig.COMMON.availableWeapons.get();
+        List<String> availableWeapons = DangerousConfig.COMMON.surfaceWeapons.get();
         String selectedWeapon = availableWeapons.get(RANDOM.nextInt(availableWeapons.size()));
         return new ItemStack(ForgeRegistries.ITEMS.getValue(new ResourceLocation(selectedWeapon)));
     }
@@ -116,5 +145,11 @@ public class GearManager {
             Enchantment enchantment = ForgeRegistries.ENCHANTMENTS.getValue(new ResourceLocation(selectedEnchantment));
             item.enchant(enchantment, 1 + RANDOM.nextInt(3));
         }
+    }
+
+    private static void giveNBT (ItemStack item) {
+        CompoundTag tag = item.getOrCreateTag();
+        tag.putBoolean("dangerous_mod_item", true);
+        item.setTag(tag);
     }
 }

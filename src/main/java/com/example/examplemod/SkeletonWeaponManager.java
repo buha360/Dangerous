@@ -21,7 +21,7 @@ import java.util.UUID;
 public class SkeletonWeaponManager {
     private static final Map<UUID, Boolean> skeletonMeleeMode = new HashMap<>();
     private static final Map<UUID, Long> lastSwitchTime = new HashMap<>();
-    private static final long SWITCH_COOLDOWN = 3000L;
+    private static final long SWITCH_COOLDOWN = 2000L;
 
     @SubscribeEvent
     public void onLivingUpdate(LivingEvent.LivingTickEvent event) {
@@ -55,7 +55,7 @@ public class SkeletonWeaponManager {
 
     private boolean isPlayerNearby(AbstractSkeleton skeleton) {
         List<Player> nearbyPlayers = skeleton.level().getEntitiesOfClass(Player.class,
-                skeleton.getBoundingBox().inflate(10.0), EntitySelector.NO_SPECTATORS);
+                skeleton.getBoundingBox().inflate(6.0), EntitySelector.NO_SPECTATORS);
         return !nearbyPlayers.isEmpty();
     }
 

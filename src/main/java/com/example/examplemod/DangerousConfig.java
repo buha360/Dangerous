@@ -21,8 +21,6 @@ public class DangerousConfig {
         public final ForgeConfigSpec.IntValue daysPerIncrement;
         public final ForgeConfigSpec.DoubleValue weaponChance;
         public final ForgeConfigSpec.DoubleValue enchantmentChance;
-        public final ForgeConfigSpec.ConfigValue<List<String>> availableWeapons;
-        public final ForgeConfigSpec.ConfigValue<List<String>> availableArmor;
         public final ForgeConfigSpec.ConfigValue<List<String>> availableBowEnchantments;
         public final ForgeConfigSpec.ConfigValue<List<String>> availableWeaponEnchantments;
         public final ForgeConfigSpec.ConfigValue<List<String>> availableArmorEnchantments;
@@ -30,6 +28,11 @@ public class DangerousConfig {
         public final ForgeConfigSpec.DoubleValue normalGearChance;
         public final ForgeConfigSpec.DoubleValue hardGearChance;
         public final ForgeConfigSpec.DoubleValue creeperSpeedMultiplier;
+        public final ForgeConfigSpec.DoubleValue spiderSpeedMultiplier;
+        public final ForgeConfigSpec.ConfigValue<List<String>> surfaceArmor;
+        public final ForgeConfigSpec.ConfigValue<List<String>> surfaceWeapons;
+        public final ForgeConfigSpec.ConfigValue<List<String>> deepArmor;
+        public final ForgeConfigSpec.ConfigValue<List<String>> deepWeapons;
 
         public Common(ForgeConfigSpec.Builder builder) {
             builder.push("Health Multiplier Settings");
@@ -70,6 +73,22 @@ public class DangerousConfig {
             builder.pop();
 
             builder.push("Gear Spawn Chances");
+            surfaceArmor = builder
+                    .comment("List of armor mobs can spawn with near the surface.")
+                    .define("surfaceArmor", List.of("minecraft:iron_helmet", "minecraft:iron_chestplate", "minecraft:iron_leggings", "minecraft:iron_boots", "minecraft:chainmail_helmet", "minecraft:chainmail_chestplate", "minecraft:chainmail_leggings", "minecraft:chainmail_boots", "minecraft:leather_helmet", "minecraft:leather_chestplate", "minecraft:leather_leggings", "minecraft:leather_boots"));
+
+            surfaceWeapons = builder
+                    .comment("List of weapons mobs can spawn with near the surface.")
+                    .define("surfaceWeapons", List.of("minecraft:stone_sword", "minecraft:stone_axe", "minecraft:iron_sword", "minecraft:iron_axe"));
+
+            deepArmor = builder
+                    .comment("List of armor mobs can spawn with in deep caves.")
+                    .define("deepArmor", List.of("minecraft:diamond_helmet", "minecraft:diamond_chestplate", "minecraft:diamond_leggings", "minecraft:diamond_boots", "minecraft:gold_helmet", "minecraft:gold_chestplate", "minecraft:gold_leggings", "minecraft:gold_boots", "minecraft:iron_helmet", "minecraft:iron_chestplate", "minecraft:iron_leggings", "minecraft:iron_boots", "minecraft:chainmail_helmet", "minecraft:chainmail_chestplate", "minecraft:chainmail_leggings", "minecraft:chainmail_boots"));
+
+            deepWeapons = builder
+                    .comment("List of weapons mobs can spawn with in deep caves.")
+                    .define("deepWeapons", List.of("minecraft:iron_sword", "minecraft:iron_axe", "minecraft:diamond_sword", "minecraft:diamond_axe"));
+
             easyGearChance = builder
                     .comment("Chance for mobs to spawn with gear in EASY mode.")
                     .defineInRange("easyGearChance", 0.10, 0.0, 1.0);
@@ -92,14 +111,6 @@ public class DangerousConfig {
                     .comment("Chance for item to get enchanted.")
                     .defineInRange("enchantmentChance", 0.2, 0.0, 1.0);
 
-            availableWeapons = builder
-                    .comment("List of weapons mobs can spawn with.")
-                    .define("availableWeapons", List.of("minecraft:iron_sword", "minecraft:iron_axe", "minecraft:diamond_sword", "minecraft:diamond_axe"));
-
-            availableArmor = builder
-                    .comment("List of armor mobs can spawn with.")
-                    .define("availableArmor", List.of("minecraft:diamond_helmet", "minecraft:diamond_chestplate", "minecraft:diamond_leggings", "minecraft:diamond_boots", "minecraft:iron_helmet", "minecraft:iron_chestplate", "minecraft:iron_leggings", "minecraft:iron_boots", "minecraft:chainmail_helmet", "minecraft:chainmail_chestplate", "minecraft:chainmail_leggings", "minecraft:chainmail_boots", "minecraft:leather_helmet", "minecraft:leather_chestplate", "minecraft:leather_leggings", "minecraft:leather_boots"));
-
             availableBowEnchantments = builder
                     .comment("Enchantments available for bows.")
                     .define("availableBowEnchantments", List.of("minecraft:power", "minecraft:infinity", "minecraft:flame", "minecraft:punch"));
@@ -111,16 +122,21 @@ public class DangerousConfig {
             availableArmorEnchantments = builder
                     .comment("Enchantments available for armor.")
                     .define("availableArmorEnchantments", List.of("minecraft:protection", "minecraft:unbreaking", "minecraft:fire_protection"));
-
             builder.pop();
 
             builder.push("Creeper Speed Settings");
-
             creeperSpeedMultiplier = builder
                     .comment("Multiplier to increase Creeper movement speed.",
                             "This value controls how fast Creepers can move.",
-                            "Range: 1.0 (normal speed) to 10.0 (very fast)")
-                    .defineInRange("creeperSpeedMultiplier", 1.5, 1.0, 10.0);
+                            "Range: 1.0 (normal speed) to 5.0 (very fast)")
+                    .defineInRange("creeperSpeedMultiplier", 1.5, 1.0, 5.0);
+
+            builder.push("Spider Speed Settings");
+            spiderSpeedMultiplier = builder
+                    .comment("Multiplier to increase Spider movement speed.",
+                            "This value controls how fast Spiders can move.",
+                            "Range: 1.0 (normal speed) to 5.0 (very fast)")
+                    .defineInRange("spiderSpeedMultiplier", 1.25, 1.0, 5.0);
 
             builder.pop();
         }
